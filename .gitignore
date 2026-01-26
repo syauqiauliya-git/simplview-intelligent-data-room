@@ -1,0 +1,26 @@
+# 1. Security: NEVER upload your API keys
+.env
+
+# 2. Virtual Environment: Too heavy, don't upload
+venv/
+.venv/
+env/
+
+# 3. Python cache files: Clutter
+__pycache__/
+*.pyc
+
+# 4. OS files: Clutter
+.DS_Store
+
+# 5. Exports
+exports/
+*.png
+
+# Logs
+*.log
+pandasai.log
+
+# Environment variables
+.env
+.streamlit/secrets.toml

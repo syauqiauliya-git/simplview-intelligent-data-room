@@ -1,0 +1,9 @@
+streamlit
+pandas
+pandasai
+pandasai-litellm
+litellm
+python-dotenv
+plotly
+altair
+vl-convert-python
