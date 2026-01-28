@@ -24,6 +24,8 @@ st.markdown("### Talk to your data with Multi-Agent AI")
 # --- INITIALIZE SESSION STATE ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "chart_cache" not in st.session_state: # <--- NEW
+    st.session_state.chart_cache = {}     # Stores { "filename.png": bytes }
 if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = None
 if "trigger_retry" not in st.session_state:
@@ -52,16 +54,24 @@ with st.sidebar:
         if visuals:
             for i, msg in enumerate(reversed(visuals)):
                 # Handle potentially multiple images per message
-                for img_idx, img_path in enumerate(msg["images"]):
-                    if os.path.exists(img_path):
+                for img_idx, fname in enumerate(msg["images"]):
+                    # LOOK IN CACHE, NOT DISK
+                    if fname in st.session_state.chart_cache:
                         prompt_text = msg.get("trigger_prompt", "Unknown")
-                        # Unique key for every single image
                         unique_key = f"{len(visuals)-i}_{img_idx}"
                         
+                        # Get bytes
+                        img_bytes = st.session_state.chart_cache[fname]
+                        
                         with st.expander(f"Visual {unique_key}: {prompt_text[:20]}...", expanded=False):
-                            st.image(img_path)
-                            with open(img_path, "rb") as file:
-                                st.download_button("Download", file, os.path.basename(img_path), "image/png", key=f"dl_sidebar_{unique_key}")
+                            st.image(img_bytes)
+                            st.download_button(
+                                label="Download", 
+                                data=img_bytes,
+                                file_name=fname,
+                                mime="image/png", 
+                                key=f"dl_sidebar_{unique_key}"
+                            )
         else:
             st.info("No visuals generated yet.")
             
@@ -125,30 +135,47 @@ def process_prompt(prompt_text, df, is_redo=False):
             result = execute_analysis(df, formatted_plan, prompt_text)
             status_container.empty()
             
+            # --- NEW: CACHE IMAGES ---
+            # Regex Explanation:
+            # [\w\-\./\\:]+  -> Matches letters, numbers, dashes, dots, slashes, backslashes, colons
+            # \.png          -> Matches the .png extension
+            image_paths = re.findall(r'([\w\-\./\\:]+\.png)', str(result))
+            
+            # Deduplicate and Filter
+            unique_paths = list(dict.fromkeys(image_paths))
+            
+            valid_images = []
+            for img_path in unique_paths:
+                if os.path.exists(img_path):
+                    # Read bytes into memory
+                    with open(img_path, "rb") as f:
+                        img_bytes = f.read()
+                    
+                    # Store in session cache
+                    fname = os.path.basename(img_path)
+                    st.session_state.chart_cache[fname] = img_bytes
+                    valid_images.append(fname) # Store only filename in history
+            
             # 3. RESULT PROCESSING
             final_response = {
                 "role": "assistant", 
                 "content": str(result), 
-                "images": [],
-                "plan": formatted_plan,  # <--- SAVE THE PLAN HERE
+                "images": valid_images, # Store filenames, not full paths
+                "plan": formatted_plan, 
                 "trigger_prompt": prompt_text
             }            
-            # DEDUPLICATION FIX
-            image_paths = re.findall(r'(exports/charts/[\w\-]+\.png)', str(result))
-            unique_paths = list(dict.fromkeys(image_paths)) # Removes dupes, keeps order
-            valid_images = [img for img in unique_paths if os.path.exists(img)]
-            final_response["images"] = valid_images
             
             # Clean text
             clean_content = str(result)
-            for img in valid_images:
-                clean_content = clean_content.replace(img, "")
-            final_response["content"] = clean_content.strip() or "I have generated the visualization."
-            
+            for img_path in unique_paths:
+                clean_content = clean_content.replace(img_path, "")
+            final_response["content"] = clean_content.strip() or "I have generated the visualization."       
+
             # Render
             st.markdown(final_response["content"])
-            for img in valid_images:
-                st.image(img, caption=f"Generated for: '{prompt_text}'")
+            for fname in valid_images:
+                if fname in st.session_state.chart_cache:
+                    st.image(st.session_state.chart_cache[fname], caption=f"Generated for: '{prompt_text}'")
             
             st.session_state.messages.append(final_response)
             
@@ -180,9 +207,13 @@ if uploaded_file:
             
             # C. Render Images
             if "images" in msg:
-                for img in msg["images"]:
-                    if os.path.exists(img):
-                        st.image(img, caption=f"Generated for: '{msg.get('trigger_prompt', 'User Request')}'")
+                for fname in msg["images"]:
+                    # Check if bytes exist in cache
+                    if fname in st.session_state.chart_cache:
+                        st.image(
+                            st.session_state.chart_cache[fname], 
+                            caption=f"Generated for: '{msg.get('trigger_prompt', 'User Request')}'"
+                        )
 
     # 2. Check Auto-Redo
     if st.session_state.redo_in_progress:

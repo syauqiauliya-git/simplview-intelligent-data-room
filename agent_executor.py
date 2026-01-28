@@ -3,8 +3,15 @@ from dotenv import load_dotenv
 import pandas as pd
 from pandasai import SmartDataframe
 from pandasai_litellm.litellm import LiteLLM
+import tempfile # <--- NEW
+import pathlib  # <--- NEW
+from typing import Union, List, Dict, Any
 
 load_dotenv()
+
+# Create a temp dir that works on any OS (Windows/Mac/Linux)
+CHART_DIR = pathlib.Path(tempfile.mkdtemp()) / "charts"
+CHART_DIR.mkdir(parents=True, exist_ok=True)
 
 def clean_and_validate_result(result):
     """
@@ -50,7 +57,7 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
         "llm": llm, 
         "enable_cache": False,
         "save_charts": True,
-        "save_charts_path": "exports/charts",
+        "save_charts_path": str(CHART_DIR), # <--- USE THE TEMP PATH
         "verbose": True
     })
     
@@ -88,8 +95,10 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
     3. **LAYOUT:** - `.properties(width=600, height=400)` is MANDATORY.
        - Use `labelAngle=-45` for X-axis labels if there are many items.
     
-    4. **FILE SAVING:** - Save exactly as PNG: `chart.save('exports/charts/chart_ID.png')`.
-    
+    4. **FILE SAVING:** - The variable `CHART_DIR` is set to: {str(CHART_DIR)}
+       - Save exactly as: `chart.save(f"{{CHART_DIR}}/chart_ID.png")`
+       - **CRITICAL:** DO NOT use `chart.show()`, `chart.display()`, or `plt.show()`. This crashes the server. ONLY save.
+
     5. **SCATTER PLOTS (Smart Handling):** - IF rows > 1000: AGGREGATE (e.g., `groupby().mean()`) and plot trend line.
        - IF rows < 1000: Plot raw scatter points.
 
