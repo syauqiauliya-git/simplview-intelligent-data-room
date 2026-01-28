@@ -82,6 +82,26 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
     1. **INSPECTION:** Do NOT assume a format. Check the string format first.
     2. **CONVERSION:** Use `pd.to_datetime(df['Order Date'], dayfirst=False, errors='coerce')` as a safe default.
     
+    --- 🔧 CODE CONSTRAINTS (CRITICAL) ---
+    1. **SQL DIALECT:** Use `STRPTIME` (DuckDB), NOT `TO_DATE`.
+    
+    2. **FILE SAVING (THE "BASENAME" RULE):**
+       - The variable `CHART_DIR` is set to: {str(CHART_DIR)}
+       - You MUST use `os.path.basename()` to strip any accidental folders from the filename.
+       - **REQUIRED PATTERN:**
+         ```python
+         # 1. Define base filename (even if you add paths, basename fixes it)
+         raw_filename = "exports/charts/my_chart.png"
+         clean_filename = os.path.basename(raw_filename) 
+         
+         # 2. Save using the clean path
+         final_path = f"{{CHART_DIR}}/{{clean_filename}}"
+         chart.save(final_path)
+         
+         # 3. Return the result
+         result = {{'type': 'plot', 'value': final_path}}
+         ```
+
     --- 📊 VISUALIZATION RULES (LABELS ARE MANDATORY) ---
     
     1. **LABELS:** All bar charts MUST have labels.

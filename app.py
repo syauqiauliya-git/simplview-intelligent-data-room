@@ -157,6 +157,7 @@ def process_prompt(prompt_text, df, is_redo=False):
                     valid_images.append(fname) # Store only filename in history
             
             # 3. RESULT PROCESSING
+
             final_response = {
                 "role": "assistant", 
                 "content": str(result), 
