@@ -6,8 +6,8 @@
 
 A Multi-Agent AI application that allows users to "talk" to their CSV/Excel data. Instead of a simple chatbot, this system uses a **Planner-Executor Architecture** to ensure accurate data analysis and visualization.
 
-![Main Interface Demo](assets/main_interface.png)
-*(Note: Replace this image with a screenshot of your app)*
+<img width="958" height="898" alt="Screenshot 2026-01-28 at 19 07 54" src="https://github.com/user-attachments/assets/8b067cc5-270b-4aec-b54e-5f2977e3677b" />
+
 
 ## ✨ Key Features
 
@@ -82,22 +82,23 @@ streamlit run app.py
 ### 1. The Execution Plan
 
 *Agent 1 breaks down the problem before solving it.*
+<img width="1032" height="335" alt="Screenshot 2026-01-28 at 19 08 33" src="https://github.com/user-attachments/assets/b7b13c0e-b13f-4653-99cc-b32d9a13a3e6" />
+
 
 ### 2. Analysis History
 
 *The sidebar keeps track of your charts.*
+<img width="382" height="868" alt="Screenshot 2026-01-28 at 19 09 43" src="https://github.com/user-attachments/assets/dd697a57-49da-4231-9d93-45a6c32e1386" />
 
 ## 🛠️ Tech Stack
 
 * **Frontend:** Streamlit
-* **LLM Orchestration:** Google Gemini (1.5 Flash)
+* **LLM Orchestration:** Google Gemini (2.5 Flash)
 * **Data Engine:** PandasAI + Pandas
-* **Visualization:** Altair / Matplotlib
+* **Visualization:** Altair
 
 ## 📄 License
 
 This project is open-source and available under the MIT License.
-
-```
 
 ```
