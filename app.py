@@ -118,10 +118,11 @@ def process_prompt(prompt_text: str, df: pd.DataFrame, is_redo: bool = False) ->
             }
             
             # Use Regex to find ALL png paths in the output text
-            # This fixes the "Invisible Chart" bug
             image_paths = re.findall(r'(exports/charts/[\w\-]+\.png)', str(result))
-            valid_images = [img for img in image_paths if os.path.exists(img)]
-            
+            # 2. Deduplicate using dict.fromkeys (Preserves order, removes duplicates)
+            unique_paths = list(dict.fromkeys(image_paths))
+            # 3. Check existence
+            valid_images = [img for img in unique_paths if os.path.exists(img)]
             final_response["images"] = valid_images
 
             # --- THE CLEANUP FIX ---
