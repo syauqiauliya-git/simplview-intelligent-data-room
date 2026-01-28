@@ -3,6 +3,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import pandas as pd
 from typing import List, Dict, Any # Make sure to import this at top
+import re
 import json
 
 
@@ -79,22 +80,33 @@ def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, An
     )
     
     response = model.generate_content(system_prompt)
+    return extract_json_from_response(response.text)
     
+
+def extract_json_from_response(response_text: str) -> dict:
+    """Robust JSON extraction from LLM response"""
+    import re
+    import json
+    
+    # Try direct parse
     try:
-        # CLEANUP: Remove markdown code blocks if present
-        text = response.text.strip()
-        if text.startswith("```json"):
-            text = text[7:]
-        if text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-            
-        return json.loads(text.strip())
-    except Exception as e:
-        # Fallback
-        return {
-            "type": "plan", 
-            "steps": ["1. Analyze request", "2. Visualize data"], 
-            "consultant_note": f"Error parsing JSON plan: {str(e)}"
-        }
+        return json.loads(response_text)
+    except:
+        pass
+    
+    # Extract from markdown code block
+    pattern = r'```(?:json)?\s*({.*?})\s*```'
+    match = re.search(pattern, response_text, re.DOTALL)
+    
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except:
+            pass
+    
+    # Fallback to prevent crashes
+    return {
+        "type": "plan",
+        "steps": ["1. Analyze the data request"],
+        "consultant_note": "Default plan due to parsing issues"
+    }

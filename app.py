@@ -64,6 +64,24 @@ with st.sidebar:
                                 st.download_button("Download", file, os.path.basename(img_path), "image/png", key=f"dl_sidebar_{unique_key}")
         else:
             st.info("No visuals generated yet.")
+            
+def validate_uploaded_file(uploaded_file) -> bool:
+    """Validate uploaded file for security and format"""
+    ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
+    MAX_SIZE_MB = 10
+    
+    # Check extension
+    file_ext = '.' + uploaded_file.name.split('.')[-1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        st.error(f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
+        return False
+    
+    # Check size (10MB limit)
+    if uploaded_file.size > MAX_SIZE_MB * 1024 * 1024:
+        st.error(f"File too large. Max size: {MAX_SIZE_MB}MB")
+        return False
+    
+    return True
 
 # --- PROCESSING FUNCTION ---
 def process_prompt(prompt_text, df, is_redo=False):
@@ -108,8 +126,13 @@ def process_prompt(prompt_text, df, is_redo=False):
             status_container.empty()
             
             # 3. RESULT PROCESSING
-            final_response = {"role": "assistant", "content": str(result), "images": [], "trigger_prompt": prompt_text}
-            
+            final_response = {
+                "role": "assistant", 
+                "content": str(result), 
+                "images": [],
+                "plan": formatted_plan,  # <--- SAVE THE PLAN HERE
+                "trigger_prompt": prompt_text
+            }            
             # DEDUPLICATION FIX
             image_paths = re.findall(r'(exports/charts/[\w\-]+\.png)', str(result))
             unique_paths = list(dict.fromkeys(image_paths)) # Removes dupes, keeps order
@@ -147,12 +170,19 @@ if uploaded_file:
     # 1. Display History
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
+            # A. Re-render the Plan (If it exists)
+            if "plan" in msg and msg["plan"]:
+                with st.expander("See Execution Plan", expanded=False):
+                    st.markdown(msg["plan"])
+
+            # B. Render the Answer Text
             st.markdown(msg["content"])
-            # Render any images attached to this message
+            
+            # C. Render Images
             if "images" in msg:
                 for img in msg["images"]:
                     if os.path.exists(img):
-                        st.image(img)
+                        st.image(img, caption=f"Generated for: '{msg.get('trigger_prompt', 'User Request')}'")
 
     # 2. Check Auto-Redo
     if st.session_state.redo_in_progress:
