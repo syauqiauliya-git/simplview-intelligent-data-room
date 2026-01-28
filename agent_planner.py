@@ -1,6 +1,9 @@
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+import pandas as pd
+from typing import List, Dict, Any # Make sure to import this at top
+
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -17,7 +20,7 @@ def get_data_schema(df):
         schema.append(f"{col} (Type: {dtype}, Sample: {sample_val})")
     return "\n".join(schema)
 
-def plan_execution(user_query, df, history=[]):
+def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, Any]] = []) -> str:
     """
     Agent 1: The Strategist
     """

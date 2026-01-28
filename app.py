@@ -34,7 +34,7 @@ if "redo_in_progress" not in st.session_state:
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("1. Upload Data")
-    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+    uploaded_file = st.file_uploader("Upload Data", type=["csv", "xlsx"])
     
     if st.button("Clear Chat History"):
         st.session_state.messages = []
@@ -66,7 +66,7 @@ with st.sidebar:
             st.info("No visuals generated yet.")
 
 # --- PROCESSING FUNCTION ---
-def process_prompt(prompt_text, df, is_redo=False):
+def process_prompt(prompt_text: str, df: pd.DataFrame, is_redo: bool = False) -> None:
     with st.chat_message("assistant"):
         status_container = st.empty()
         
@@ -151,7 +151,12 @@ def process_prompt(prompt_text, df, is_redo=False):
 
 # --- MAIN LOGIC ---
 if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+    # Check file extension to use correct loader
+    if uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
+        
     if not st.session_state.messages:
         st.sidebar.success("Data Loaded!")
 
@@ -206,4 +211,4 @@ if uploaded_file:
         st.rerun()
 
 else:
-    st.info("Please upload a CSV file to begin.")
+    st.info("Please upload a CSV or XLSX file to begin.")

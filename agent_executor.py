@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import pandas as pd
 from pandasai import SmartDataframe
 from pandasai_litellm.litellm import LiteLLM
 
@@ -33,7 +34,7 @@ def clean_and_validate_result(result):
             
     return result
 
-def execute_analysis(df, planner_output, user_query):
+def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> str:
     """
     Agent 2: The Executor (Powered by LiteLLM)
     """
@@ -88,7 +89,11 @@ def execute_analysis(df, planner_output, user_query):
        - Use `labelAngle=-45` for X-axis labels if there are many items.
     
     4. **FILE SAVING:** - Save exactly as PNG: `chart.save('exports/charts/chart_ID.png')`.
-    
+
+    5. **SCATTER PLOTS (Dense Data):** - **Problem:** Raw scatter plots with >1000 points are noisy.
+       - **Solution:** You MUST aggregate data first (e.g., `groupby().mean()`).
+       - **Pattern:** Plot the *grouped* data to show the trend clearly using a Line Chart or Circle Marks.
+       
     --- DATA OUTPUT RULES ---
     - **Verification:** After generating the chart, return a string summary of the Top 3 Insights.
     - **Tables:** Return a Pandas DataFrame.
