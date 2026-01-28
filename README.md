@@ -1,6 +1,3 @@
-Here is the complete, unified `README.md` file. You can copy this entire block and paste it directly into your repository.
-
-```markdown
 # 🤖 Intelligent Data Room
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://simplview-intelligent-data-room-syauqi.streamlit.app/)
@@ -55,7 +52,6 @@ pip install -r requirements.txt
 
 ```
 
-
 3. **Set up Environment**
 Create a `.env` file in the root directory:
 ```bash
@@ -63,14 +59,11 @@ GOOGLE_API_KEY="AIzaSyYourKeyHere..."
 
 ```
 
-
 4. **Run the App**
 ```bash
 streamlit run app.py
 
 ```
-
-
 
 ## 📂 Project Structure
 
