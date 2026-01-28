@@ -1,4 +1,5 @@
 # 🤖 Intelligent Data Room
+Try it! https://simplview-intelligent-data-room-syauqi.streamlit.app/
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://simplview-intelligent-data-room-syauqi.streamlit.app/)
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
