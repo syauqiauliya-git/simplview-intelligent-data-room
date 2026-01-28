@@ -48,9 +48,10 @@ def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, An
     {user_query}
     
     INSTRUCTIONS:
-    1. Analyze the request.
+    1. Analyze the request. Is the request specific or vague?
     2. **Anti-Nagging:** If clarification_count > 0 ({clarification_count}), output a PLAN.
-    3. **Output:** Return a JSON object ONLY. Do not wrap it in markdown.
+    3. **Visualization:** explicitly decide if a chart is needed.
+    4. **Output:** Return a JSON object ONLY. Do not wrap it in markdown.
     
     --- JSON SCHEMA ---
     
@@ -69,7 +70,19 @@ def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, An
             "2. Group by...",
             "3. Plot..."
         ],
-        "consultant_note": "I decided to focus on..."
+        "consultant_note": "I chose a horizontal bar chart because...",
+        "visualization_needed": true,
+        "visualization_type": "bar" 
+        // Valid Options: 
+        // - 'bar' (standard vertical)
+        // - 'horizontal_bar' (good for long labels/many categories)
+        // - 'line' (trends over time)
+        // - 'multi_line' (comparing trends)
+        // - 'scatter' (correlations)
+        // - 'pie' (part-to-whole)
+        // - 'count' (frequency of occurrences)
+        // - 'map' (geospatial data)
+        // - 'none'
     }}
     """
     

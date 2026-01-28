@@ -80,7 +80,7 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
     
     --- 📅 DATE HANDLING RULES ---
     1. **INSPECTION:** Do NOT assume a format. Check the string format first.
-    2. **CONVERSION:** Use `pd.to_datetime(df['Order Date'], dayfirst=False, errors='coerce')` as a safe default unless the format is clearly DD/MM/YYYY. 
+    2. **CONVERSION:** Use `pd.to_datetime(df['Order Date'], dayfirst=False, errors='coerce')` as a safe default.
     
     --- 📊 VISUALIZATION RULES (LABELS ARE MANDATORY) ---
     
