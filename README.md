@@ -41,7 +41,7 @@ The application splits the cognitive load into two distinct phases:
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+```bash
    git clone [https://github.com/YOUR_USERNAME/intelligent-data-room.git](https://github.com/YOUR_USERNAME/intelligent-data-room.git)
    cd intelligent-data-room
 
