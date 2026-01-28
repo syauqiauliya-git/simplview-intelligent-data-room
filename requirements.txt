@@ -2,6 +2,7 @@ streamlit
 pandas
 pandasai
 pandasai-litellm
+google-generativeai
 litellm
 python-dotenv
 plotly

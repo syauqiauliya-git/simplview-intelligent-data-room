@@ -8,12 +8,6 @@ import json
 
 
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-
-if not api_key:
-    raise ValueError("GOOGLE_API_KEY not found. Check your .env file!")
-
-genai.configure(api_key=api_key)
 
 def get_data_schema(df):
     schema = []
@@ -28,6 +22,14 @@ def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, An
     """
     Agent 1: The Strategist
     """
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY not found. Check your .env file!")
+
+    genai.configure(api_key=api_key)
+
     schema = get_data_schema(df)
 
     previous_clarifications = [msg for msg in history if "CLARIFICATION_NEEDED" in str(msg.get("content", ""))]
