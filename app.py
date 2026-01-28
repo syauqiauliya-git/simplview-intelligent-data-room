@@ -59,14 +59,14 @@ with st.sidebar:
                         unique_key = f"{len(visuals)-i}_{img_idx}"
                         
                         with st.expander(f"Visual {unique_key}: {prompt_text[:20]}...", expanded=False):
-                            st.image(img_path, use_container_width=True)
+                            st.image(img_path)
                             with open(img_path, "rb") as file:
                                 st.download_button("Download", file, os.path.basename(img_path), "image/png", key=f"dl_sidebar_{unique_key}")
         else:
             st.info("No visuals generated yet.")
 
 # --- PROCESSING FUNCTION ---
-def process_prompt(prompt_text: str, df: pd.DataFrame, is_redo: bool = False) -> None:
+def process_prompt(prompt_text, df, is_redo=False):
     with st.chat_message("assistant"):
         status_container = st.empty()
         
@@ -74,73 +74,56 @@ def process_prompt(prompt_text: str, df: pd.DataFrame, is_redo: bool = False) ->
             # 1. PLANNER PHASE
             status_container.markdown("🧠 **Agent 1 (Planner):** Thinking...")
             
-            # Logic to handle Redo
             effective_prompt = prompt_text
             if is_redo:
-                effective_prompt += " (NOTE: The user was unsatisfied. Try a DIFFERENT approach.)"
-                
-            plan = plan_execution(effective_prompt, df, st.session_state.messages)
+                effective_prompt += " (NOTE: User unsatisfied. Try different approach.)"
             
-            # --- NEW: CLARIFICATION CHECK ---
-            if "CLARIFICATION_NEEDED" in plan:
+            # Now gets a DICT
+            plan_data = plan_execution(effective_prompt, df, st.session_state.messages)
+            
+            # --- LOGIC BRANCHING ---
+            
+            # CASE A: CLARIFICATION
+            if plan_data.get("type") == "clarification":
                 status_container.empty()
+                options_text = "\n".join([f"- {opt}" for opt in plan_data.get("options", [])])
+                message = f"**🤖 {plan_data['message']}**\n\n{options_text}"
+                st.markdown(message)
+                st.session_state.messages.append({"role": "assistant", "content": message, "images": []})
+                return 
+            
+            # CASE B: EXECUTION PLAN
+            steps = plan_data.get("steps", [])
+            note = plan_data.get("consultant_note", "")
+            formatted_plan = "\n".join(steps)
+            if note:
+                formatted_plan += f"\n\n**Consultant's Note:** {note}"
                 
-                # Clean up the tag
-                clarification_text = plan.replace("CLARIFICATION_NEEDED:", "").strip()
-                
-                # Show the question to user
-                st.markdown(f"**🤖 I need a bit more detail:**\n\n{clarification_text}")
-                
-                # Save to history so the next turn remembers this context
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": clarification_text,
-                    "images": [] # No images for clarification
-                })
-                return  # <--- STOP HERE. Don't run the executor.
-
-            # If we are here, the plan is solid. Proceed.
             with st.expander("See Execution Plan", expanded=False):
-                st.markdown(plan)
+                st.markdown(formatted_plan)
             
             # 2. EXECUTOR PHASE
             status_container.markdown("⚙️ **Agent 2 (Executor):** Generating Visuals...")
-            result = execute_analysis(df, plan, prompt_text)
-            
+            result = execute_analysis(df, formatted_plan, prompt_text)
             status_container.empty()
             
-            # 3. RESULT PROCESSING (REGEX FIX)
-            final_response = {
-                "role": "assistant", 
-                "content": str(result), 
-                "images": [],
-                "trigger_prompt": prompt_text
-            }
+            # 3. RESULT PROCESSING
+            final_response = {"role": "assistant", "content": str(result), "images": [], "trigger_prompt": prompt_text}
             
-            # Use Regex to find ALL png paths in the output text
+            # DEDUPLICATION FIX
             image_paths = re.findall(r'(exports/charts/[\w\-]+\.png)', str(result))
-            # 2. Deduplicate using dict.fromkeys (Preserves order, removes duplicates)
-            unique_paths = list(dict.fromkeys(image_paths))
-            # 3. Check existence
+            unique_paths = list(dict.fromkeys(image_paths)) # Removes dupes, keeps order
             valid_images = [img for img in unique_paths if os.path.exists(img)]
             final_response["images"] = valid_images
-
-            # --- THE CLEANUP FIX ---
-            # Remove the ugly file paths from the text, since we show the image separately
+            
+            # Clean text
             clean_content = str(result)
             for img in valid_images:
                 clean_content = clean_content.replace(img, "")
+            final_response["content"] = clean_content.strip() or "I have generated the visualization."
             
-            # If the agent only returned a path (now empty), add a default message
-            if not clean_content.strip():
-                clean_content = "I have generated the visualization based on your request."
-                
-            final_response["content"] = clean_content.strip()
-            
-            # Render Text
+            # Render
             st.markdown(final_response["content"])
-            
-            # Render Images
             for img in valid_images:
                 st.image(img, caption=f"Generated for: '{prompt_text}'")
             

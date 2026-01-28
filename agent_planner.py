@@ -3,6 +3,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import pandas as pd
 from typing import List, Dict, Any # Make sure to import this at top
+import json
 
 
 load_dotenv()
@@ -20,17 +21,17 @@ def get_data_schema(df):
         schema.append(f"{col} (Type: {dtype}, Sample: {sample_val})")
     return "\n".join(schema)
 
-def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, Any]] = []) -> str:
+# REPLACE THE ENTIRE plan_execution FUNCTION WITH THIS:
+
+def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, Any]] = []) -> Dict[str, Any]:
     """
     Agent 1: The Strategist
     """
     schema = get_data_schema(df)
 
-    # 1. Check History for previous clarifications to prevent loops
     previous_clarifications = [msg for msg in history if "CLARIFICATION_NEEDED" in str(msg.get("content", ""))]
     clarification_count = len(previous_clarifications)
     
-    # Format history for the prompt
     history_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history[-5:]])
 
     system_prompt = f"""
@@ -46,34 +47,54 @@ def plan_execution(user_query: str, df: pd.DataFrame, history: List[Dict[str, An
     {user_query}
     
     INSTRUCTIONS:
-    1. **Analyze the Request:** Is it specific (e.g., "Sales by Region") or vague (e.g., "How is the business doing?")?
-    2. **Anti-Nagging Protocol (CRITICAL):** - You have asked for clarification **{clarification_count}** times already.
-       - If {clarification_count} > 0, do NOT ask again. Make an executive decision (e.g., "Assuming user wants Total Sales...") and generate a plan immediately.
-    3. **Protocol for Vague Requests [FIRST-TIME ONLY]:** - Do NOT guess. Do NOT generate a complex execution plan.
-       - Instead, output a response starting with **"CLARIFICATION_NEEDED:"**.
-       - List 3 distinct options/metrics the user might want (e.g., "1. Sales Trend, 2. Profitability Analysis, 3. Regional Breakdown").
-    4. **Protocol for Specific Requests:**
-       - Generate a standard numbered execution plan.
-       - Focus on the SINGLE most impactful chart/metric. Do NOT try to calculate 10 different things at once.
+    1. Analyze the request.
+    2. **Anti-Nagging:** If clarification_count > 0 ({clarification_count}), output a PLAN.
+    3. **Output:** Return a JSON object ONLY. Do not wrap it in markdown.
     
-    OUTPUT FORMAT (Choose One):
+    --- JSON SCHEMA ---
     
-    [Option A - If Vague]
-    CLARIFICATION_NEEDED:
-    The request is broad. Would you like to focus on:
-    1. [Option 1]
-    2. [Option 2]
-    3. [Option 3]
+    CASE 1: Vague Request (and count=0)
+    {{
+        "type": "clarification",
+        "message": "The request is vague...",
+        "options": ["Option 1", "Option 2", "Option 3"]
+    }}
     
-    [Option B - If Specific Enough OR History > 0]
-    1. [Step 1]
-    2. [Step 2]
-    ...
-    **Consultant's Note:** [Explain or justify your executive decision making]
+    CASE 2: Specific Request (or count>0)
+    {{
+        "type": "plan",
+        "steps": [
+            "1. Filter data...",
+            "2. Group by...",
+            "3. Plot..."
+        ],
+        "consultant_note": "I decided to focus on..."
+    }}
     """
     
-    # Use Flash for speed
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    # Use the Correct Model
+    model = genai.GenerativeModel(
+        'gemini-2.5-flash',
+        generation_config={"response_mime_type": "application/json"}
+    )
+    
     response = model.generate_content(system_prompt)
     
-    return response.text
+    try:
+        # CLEANUP: Remove markdown code blocks if present
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+            
+        return json.loads(text.strip())
+    except Exception as e:
+        # Fallback
+        return {
+            "type": "plan", 
+            "steps": ["1. Analyze request", "2. Visualize data"], 
+            "consultant_note": f"Error parsing JSON plan: {str(e)}"
+        }

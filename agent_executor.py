@@ -72,8 +72,8 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
        - **DO NOT use 'return'.** Use 'result = ...' instead.
     
     --- 📅 DATE HANDLING RULES ---
-    1. **FORMAT:** 'Order Date' is 'MM/DD/YYYY' (e.g., '11/8/2020').
-    2. **PARSING:** Use `pd.to_datetime(df['Order Date'], format='%m/%d/%Y')` before extracting years/months.
+    1. **INSPECTION:** Do NOT assume a format. Check the string format first.
+    2. **CONVERSION:** Use `pd.to_datetime(df['Order Date'], dayfirst=False, errors='coerce')` as a safe default unless the format is clearly DD/MM/YYYY. 
     
     --- 📊 VISUALIZATION RULES (LABELS ARE MANDATORY) ---
     
@@ -89,11 +89,10 @@ def execute_analysis(df: pd.DataFrame, planner_output: str, user_query: str) -> 
        - Use `labelAngle=-45` for X-axis labels if there are many items.
     
     4. **FILE SAVING:** - Save exactly as PNG: `chart.save('exports/charts/chart_ID.png')`.
+    
+    5. **SCATTER PLOTS (Smart Handling):** - IF rows > 1000: AGGREGATE (e.g., `groupby().mean()`) and plot trend line.
+       - IF rows < 1000: Plot raw scatter points.
 
-    5. **SCATTER PLOTS (Dense Data):** - **Problem:** Raw scatter plots with >1000 points are noisy.
-       - **Solution:** You MUST aggregate data first (e.g., `groupby().mean()`).
-       - **Pattern:** Plot the *grouped* data to show the trend clearly using a Line Chart or Circle Marks.
-       
     --- DATA OUTPUT RULES ---
     - **Verification:** After generating the chart, return a string summary of the Top 3 Insights.
     - **Tables:** Return a Pandas DataFrame.
