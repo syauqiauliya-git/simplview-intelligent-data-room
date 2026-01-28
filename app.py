@@ -186,6 +186,9 @@ def process_prompt(prompt_text, df, is_redo=False):
 
 # --- MAIN LOGIC ---
 if uploaded_file:
+    if not validate_uploaded_file(uploaded_file):
+        st.stop()  # Stop execution if validation fails
+        
     # Check file extension to use correct loader
     if uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file)
