@@ -10,8 +10,7 @@ A Multi-Agent AI application that allows users to "talk" to their CSV/Excel data
 
 ## 📸 Demo
 
-![Main Interface](assets/main_interface.png)
-*(Screenshot of the main chat interface showing a user query and a generated chart)*
+<img width="1680" height="965" alt="Screenshot 2026-01-28 at 19 00 05" src="https://github.com/user-attachments/assets/35620283-de53-4544-9a0f-545eb7a190ab" />
 
 ---
 
